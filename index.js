@@ -11,54 +11,86 @@ app.use(connect.query()); // Parse query string into `request.query`
 app.use('/', main);
 
 function main(request, response, next) {
-	switch (request.method) {
-		case 'GET': get(request, response); break;
-		case 'POST': post(request, response); break;
-		case 'DELETE': del(request, response); break;
-		case 'PUT': put(request, response); break;
-	}
+    switch (request.method) {
+        case 'GET': get(request, response); break;
+        case 'POST': post(request, response); break;
+        case 'DELETE': del(request, response); break;
+        case 'PUT': put(request, response); break;
+    }
 };
 
 function get(request, response) {
-	var cookies = request.cookies;
-	console.log(cookies);
-	if ('session_id' in cookies) {
-		var sid = cookies['session_id'];
-		if ( login.isLoggedIn(sid) ) {
-			response.setHeader('Set-Cookie', 'session_id=' + sid);
-			response.end(login.hello(sid));	
-		} else {
-			response.end("Invalid session_id! Please login again\n");
-		}
-	} else {
-		response.end("Please login via HTTP POST\n");
-	}
+var cookies = request.cookies;
+    console.log(cookies);
+    if ('session_id' in cookies) {
+        var sid = cookies['session_id'];
+        if ( login.isLoggedIn(sid) ) {
+            response.setHeader('Set-Cookie', 'session_id=' + sid);
+            response.end(login.hello(sid));
+        } else {
+            response.end("Invalid session_id! Please login again\n");
+        }
+    } else {
+        response.end("Please login via HTTP POST\n");
+    }
 };
 
 function post(request, response) {
-	// TODO: read 'name and email from the request.body'
-	// var newSessionId = login.login('xxx', 'xxx@gmail.com');
-	// TODO: set new session id to the 'session_id' cookie in the response
-	// replace "Logged In" response with response.end(login.hello(newSessionId));
+    // TODO: read 'name and email from the request.body'
+    var name ,email;
+    name = request.body.name;
+    email = request.body.email;
+    var newSessionId = login.login(name, email);
+    // TODO: set new session id to the 'session_id' cookie in the response
+    var cookies = request.cookies;
+response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
+    cookies['session_id'] = newSessionId;
+    //response.set('newSessionId','session_id');
+    // replace "Logged In" response with response.end(login.hello(newSessionId));
+    //response.end("Logged In\n");
+    response.end(login.hello(newSessionId));
 
-	response.end("Logged In\n");
 };
 
 function del(request, response) {
-	console.log("DELETE:: Logout from the server");
- 	// TODO: remove session id via login.logout(xxx)
- 	// No need to set session id in the response cookies since you just logged out!
+    console.log("DELETE:: Logout from the server");
+     // TODO: remove session id via login.logout(xxx)
 
-  	response.end('Logged out from the server\n');
+var cookies=request.cookies;
+var sessionId=cookies['session_id']
+login.logout(sessionId);    //Login.prototype.logout = function(sessionId) {
+    //console.log('logout::' + sessionId);
+
+     // No need to set session id in the response cookies since you just logged out!
+
+      response.end('Logged out from the server\n');
 };
-
 function put(request, response) {
-	console.log("PUT:: Re-generate new seesion_id for the same user");
-	// TODO: refresh session id; similar to the post() function
+    console.log("PUT:: Re-generate new session_id for the same user");
 
-	response.end("Re-freshed session id\n");
+    var cookies = request.cookies;
+    var sessionId = cookies['session_id']
+    var n = login.sessionMap[sessionId].name;
+        var e = login.sessionMap[sessionId].email;
+
+        login.logout(sessionId);
+
+
+        var newsessionId= login.login(n,e);
+        //response.out("name is " +n);
+        console.log('new session id ' + newsessionId + ' for login::' + e);
+
+
+
+response.setHeader('Set-Cookie', 'session_id=' + newsessionId);
+cookies['session_id'] = newsessionId;
+ response.end("Re-freshed session id\n" +newsessionId);
+
 };
-
 app.listen(8000);
 
-console.log("Node.JS server running at 8000...");
+console.log("Node.JS server running at 8000...");var connect = require('connect');
+
+
+
+
